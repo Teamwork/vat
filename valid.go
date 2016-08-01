@@ -1,3 +1,6 @@
+// Package vat validates and sanitizes VAT numbers belonging to EU (and non-EU)
+// regions according to the current formats listed here:
+// https://en.wikipedia.org/wiki/VAT_identification_number
 package vat
 
 import (
