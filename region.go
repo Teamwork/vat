@@ -112,6 +112,6 @@ var validRegions []string
 
 func init() {
 	for k := range regionPatterns {
-		validRegions = append(validRegions, string(k))
+		validRegions = append(validRegions, k)
 	}
 }
