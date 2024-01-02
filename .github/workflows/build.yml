@@ -24,10 +24,10 @@ jobs:
         run: go build .
 
       - name: Lint
-        run: .bin/lint
+        run: ./bin/lint
 
       - name: Test
-        run: .bin/test
+        run: ./bin/test
 
       - name: Coverage
-        run: .bin/coverage
+        run: ./bin/coverage
