@@ -15,5 +15,7 @@ ignore_metalinter() {
 	for d in $lint_ignore; do printf " --skip-dirs %s" "$d"; done
 }
 
+curl -sSfL --silent -o /dev/null https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.55.2
+
 # There's an issue dealing with symbolic link folders (cd -P .) solves that
-(cd -P .; go run "$root/vendor/github.com/golangci/golangci-lint/cmd/golangci-lint/main.go" run $(ignore_metalinter) "$@")
+(cd -P .; golangci-lint run $(ignore_metalinter) "$@")

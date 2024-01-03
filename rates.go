@@ -36,7 +36,8 @@ func (cr *CountryRates) GetRateOn(t time.Time, level string) (float32, error) {
 
 	// find active period for the given time
 	for _, p := range cr.Periods {
-		if t.After(p.EffectiveFrom) && (activePeriod.EffectiveFrom.IsZero() || p.EffectiveFrom.After(activePeriod.EffectiveFrom)) {
+		if t.After(p.EffectiveFrom) && (activePeriod.EffectiveFrom.IsZero() ||
+			p.EffectiveFrom.After(activePeriod.EffectiveFrom)) {
 			activePeriod = p
 		}
 	}

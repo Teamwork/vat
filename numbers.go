@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+// ViesResponse holds the response data from the Vies call
 type ViesResponse struct {
 	CountryCode string
 	VATNumber   string
@@ -113,7 +114,9 @@ func Lookup(vatNumber string) (*ViesResponse, error) {
 	if err != nil {
 		return nil, ErrServiceUnavailable
 	}
-	defer res.Body.Close()
+	defer func() {
+		_ = res.Body.Close()
+	}()
 
 	xmlRes, err := io.ReadAll(res.Body)
 	if err != nil {
