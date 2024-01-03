@@ -174,10 +174,10 @@ func TestValidateNumber(t *testing.T) {
 }
 
 func ExampleValidateNumber() {
-	vatNumber := "IT06823950966"
+	vatNumber := "BE0472429986"
 	valid, _ := ValidateNumber(vatNumber)
 	fmt.Printf("Is %s valid: %t", vatNumber, valid)
-	// Output: Is IT06823950966 valid: true
+	// Output: Is BE0472429986 valid: true
 }
 
 func TestValidateNumberFormat(t *testing.T) {
@@ -197,9 +197,9 @@ func TestValidateNumberFormat(t *testing.T) {
 }
 
 func TestValidateNumberExistence(t *testing.T) {
-	valid, _ := ValidateNumberExistence("IT06823950966")
+	valid, _ := ValidateNumberExistence("BE0472429986")
 	if !valid {
-		t.Error("Expected IT06823950966 to be a valid VAT number.")
+		t.Error("Expected BE0472429986 to be a valid VAT number.")
 	}
 
 	valid, _ = ValidateNumberExistence("NL123456789B01")
