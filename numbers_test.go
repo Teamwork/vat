@@ -199,11 +199,11 @@ func TestValidateNumberFormat(t *testing.T) {
 func TestValidateNumberExistence(t *testing.T) {
 	valid, _ := ValidateNumberExistence("IT06823950966")
 	if !valid {
-		t.Error("IT06823950966 is a valid VAT number.")
+		t.Error("Expected IT06823950966 to be a valid VAT number.")
 	}
 
 	valid, _ = ValidateNumberExistence("NL123456789B01")
 	if valid {
-		t.Error("NL123456789B01 is not a valid VAT number.")
+		t.Error("Expected NL123456789B01 to not be a valid VAT number.")
 	}
 }
