@@ -32,14 +32,14 @@ var ErrCountryNotFound = errors.New("vat: country not found")
 // ValidateNumber validates a VAT number by both format and existence.
 // The existence check uses the VIES VAT validation SOAP API and will only run when format validation passes.
 func ValidateNumber(n string) (bool, error) {
-	format, err := ValidateNumberFormat(n)
+	isValidFormat, err := ValidateNumberFormat(n)
 	existence := false
 
-	if format {
+	if isValidFormat {
 		existence, err = ValidateNumberExistence(n)
 	}
 
-	return format && existence, err
+	return isValidFormat && existence, err
 }
 
 // ValidateNumberFormat validates a VAT number by its format.
