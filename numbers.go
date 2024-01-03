@@ -11,7 +11,6 @@ import (
 	"time"
 )
 
-// ViesResponse holds the response data from the Vies call
 type ViesResponse struct {
 	CountryCode string
 	VATNumber   string
