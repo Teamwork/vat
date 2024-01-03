@@ -16,4 +16,4 @@ ignore_metalinter() {
 }
 
 # There's an issue dealing with symbolic link folders (cd -P .) solves that
-(cd -P .; go run vendor/github.com/golangci/golangci-lint/cmd/golangci-lint/main.go run $(ignore_metalinter) "$@")
+(cd -P .; go run "$root/vendor/github.com/golangci/golangci-lint/cmd/golangci-lint/main.go" run $(ignore_metalinter) "$@")
