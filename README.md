@@ -64,11 +64,11 @@ import (
 )
 
 func main() {
-  c, err := vat.GetCountryRates("NL")
+  c, err := vat.GetCountryRates("IE")
   r, err := c.GetRate("standard")
 
-  fmt.Printf("Standard VAT rate for NL is %.2f", r)
-  // Output: Standard VAT rate for NL is 21.00
+  fmt.Printf("Standard VAT rate for IE is %.2f", r)
+  // Output: Standard VAT rate for IE is 23.00
 }
 ```
 
