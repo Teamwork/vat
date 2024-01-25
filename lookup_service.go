@@ -14,6 +14,7 @@ type ViesServiceInterface interface {
 // ViesService implements ViesServiceInterface using the HTTP client.
 type ViesService struct{}
 
+// Lookup calls the VIES service to get info about the VAT number
 func (s *ViesService) Lookup(envelope string) (*http.Response, error) {
 	envelopeBuffer := bytes.NewBufferString(envelope)
 	client := http.Client{

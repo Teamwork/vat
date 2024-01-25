@@ -231,10 +231,10 @@ func TestLookupValidateNumberExistence(t *testing.T) {
 				t.Error("expected a ViesResponse, none received")
 			}
 			if test.isValid && !viesResponse.Valid {
-				t.Error(fmt.Sprintf("expected %s to be a valid VAT number.", test.fullVatNumber))
+				t.Errorf("expected %s to be a valid VAT number.", test.fullVatNumber)
 			}
 			if !test.isValid && viesResponse.Valid {
-				t.Error(fmt.Sprintf("expected %s to not be a valid VAT number.", test.fullVatNumber))
+				t.Errorf("expected %s to not be a valid VAT number.", test.fullVatNumber)
 			}
 		}
 	}
