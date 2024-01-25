@@ -5,10 +5,8 @@ import (
 	"encoding/xml"
 	"errors"
 	"io"
-	"net/http"
 	"regexp"
 	"strings"
-	"time"
 )
 
 // ViesResponse holds the response data from the Vies call
@@ -21,13 +19,14 @@ type ViesResponse struct {
 	Address     string
 }
 
-const serviceURL = "http://ec.europa.eu/taxation_customs/vies/services/checkVatService"
-
 // ErrInvalidVATNumber will be returned when an invalid VAT number is passed to a function that validates existence.
 var ErrInvalidVATNumber = errors.New("vat: vat number is invalid")
 
 // ErrCountryNotFound indicates that this package could not find a country matching the VAT number prefix.
 var ErrCountryNotFound = errors.New("vat: country not found")
+
+// ErrServiceUnavailable will be returned when VIES VAT validation API or jsonvat.com is unreachable.
+var ErrServiceUnavailable = errors.New("vat: service is unreachable")
 
 // ValidateNumber validates a VAT number by both format and existence.
 // The existence check uses the VIES VAT validation SOAP API and will only run when format validation passes.
@@ -91,8 +90,8 @@ func ValidateNumberFormat(n string) (bool, error) {
 }
 
 // ValidateNumberExistence validates a VAT number by its existence using the VIES VAT API (using SOAP)
-func ValidateNumberExistence(n string) (bool, error) {
-	r, err := Lookup(n)
+func ValidateNumberExistence(vatNumber string) (bool, error) {
+	r, err := Lookup(vatNumber, &ViesService{})
 	if err != nil {
 		return false, err
 	}
@@ -100,17 +99,12 @@ func ValidateNumberExistence(n string) (bool, error) {
 }
 
 // Lookup returns *ViesResponse for a VAT number
-func Lookup(vatNumber string) (*ViesResponse, error) {
+func Lookup(vatNumber string, service ViesServiceInterface) (*ViesResponse, error) {
 	if len(vatNumber) < 3 {
 		return nil, ErrInvalidVATNumber
 	}
 
-	e := getEnvelope(vatNumber)
-	eb := bytes.NewBufferString(e)
-	client := http.Client{
-		Timeout: time.Duration(ServiceTimeout) * time.Second,
-	}
-	res, err := client.Post(serviceURL, "text/xml;charset=UTF-8", eb)
+	res, err := service.Lookup(getEnvelope(vatNumber))
 	if err != nil {
 		return nil, ErrServiceUnavailable
 	}
@@ -170,17 +164,15 @@ func getEnvelope(n string) string {
 	n = strings.ToUpper(n)
 	countryCode := n[0:2]
 	vatNumber := n[2:]
-	const envelopeTemplate = `
-	<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
-	<soapenv:Header/>
-	<soapenv:Body>
-	  <checkVat xmlns="urn:ec.europa.eu:taxud:vies:services:checkVat:types">
-	    <countryCode>{{.countryCode}}</countryCode>
-	    <vatNumber>{{.vatNumber}}</vatNumber>
-	  </checkVat>
-	</soapenv:Body>
-	</soapenv:Envelope>
-	`
+	const envelopeTemplate = `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+<soapenv:Header/>
+<soapenv:Body>
+  <checkVat xmlns="urn:ec.europa.eu:taxud:vies:services:checkVat:types">
+	<countryCode>{{.countryCode}}</countryCode>
+	<vatNumber>{{.vatNumber}}</vatNumber>
+  </checkVat>
+</soapenv:Body>
+</soapenv:Envelope>`
 
 	e := envelopeTemplate
 	e = strings.Replace(e, "{{.countryCode}}", countryCode, 1)

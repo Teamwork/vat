@@ -1,9 +1,15 @@
 package vat
 
 import (
+	"bytes"
 	"fmt"
+	"io"
+	"net/http"
 	"strconv"
 	"testing"
+
+	"github.com/golang/mock/gomock"
+	"github.com/teamwork/vat/mocks"
 )
 
 var tests = []struct {
@@ -158,28 +164,6 @@ func BenchmarkValidateFormat(b *testing.B) {
 	}
 }
 
-func TestValidateNumber(t *testing.T) {
-	for _, test := range tests {
-		valid, err := ValidateNumberFormat(test.number)
-		if err != nil {
-			if err.Error() != ErrCountryNotFound.Error() {
-				panic(err)
-			}
-		}
-
-		if test.valid != valid {
-			t.Errorf("Expected %v for %v, got %v", test.valid, test.number, valid)
-		}
-	}
-}
-
-func ExampleValidateNumber() {
-	vatNumber := "BE0472429986"
-	valid, _ := ValidateNumber(vatNumber)
-	fmt.Printf("Is %s valid: %t", vatNumber, valid)
-	// Output: Is BE0472429986 valid: true
-}
-
 func TestValidateNumberFormat(t *testing.T) {
 	for _, test := range tests {
 		valid, err := ValidateNumberFormat(test.number)
@@ -196,14 +180,104 @@ func TestValidateNumberFormat(t *testing.T) {
 	}
 }
 
-func TestValidateNumberExistence(t *testing.T) {
-	valid, _ := ValidateNumberExistence("BE0472429986")
-	if !valid {
-		t.Error("Expected BE0472429986 to be a valid VAT number.")
+var lookupTests = []struct {
+	fullVatNumber    string
+	vatNumber        string
+	countryCode      string
+	isValid          bool
+	expectedResponse string
+	expectedError    *error
+}{
+	{"BE0472429986", "BE", "0472429986", true, "", nil},
+	{"NL123456789B01", "NL", "123456789B01", false, "", nil},
+	{"Hi", "", "Hi", false, "", &ErrInvalidVATNumber},
+	{"INVALID INPUT", "IN", "VALID INPUT", false, "INVALID_INPUT", &ErrInvalidVATNumber},
+	{"BE0472429986", "BE", "0472429986", true, "MS_UNAVAILABLE", &ErrServiceUnavailable},
+	{"BE0472429986", "BE", "0472429986", true, "MS_MAX_CONCURRENT_REQ", &ErrServiceUnavailable},
+}
+
+func TestLookupValidateNumberExistence(t *testing.T) {
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockViesService := mocks.NewMockViesServiceInterface(ctrl)
+
+	for _, test := range lookupTests {
+		if len(test.fullVatNumber) >= 3 {
+			expectedViesResponseBody := test.expectedResponse
+			if expectedViesResponseBody == "" {
+				expectedViesResponseBody = expectedViesResponse(test.vatNumber, test.countryCode, test.isValid)
+			}
+			expectedViesResponse := &http.Response{
+				Body:       io.NopCloser(bytes.NewBufferString(expectedViesResponseBody)),
+				StatusCode: http.StatusOK,
+			}
+
+			mockViesService.EXPECT().
+				Lookup(expectedViesRequestEnvelope(test.vatNumber, test.countryCode)).
+				Return(expectedViesResponse, nil)
+		}
+
+		viesResponse, err := Lookup(test.fullVatNumber, mockViesService)
+		if err != nil {
+			if test.expectedError == nil {
+				t.Error(fmt.Errorf("unexpected error: %w", err))
+			} else if err != *test.expectedError {
+				t.Error(fmt.Errorf("Expected error: %w\nGot: %s", *test.expectedError, err.Error()))
+			}
+		} else {
+			if viesResponse == nil {
+				t.Error("expected a ViesResponse, none received")
+			}
+			if test.isValid && !viesResponse.Valid {
+				t.Error(fmt.Sprintf("expected %s to be a valid VAT number.", test.fullVatNumber))
+			}
+			if !test.isValid && viesResponse.Valid {
+				t.Error(fmt.Sprintf("expected %s to not be a valid VAT number.", test.fullVatNumber))
+			}
+		}
+	}
+}
+
+func expectedViesRequestEnvelope(vatNumber string, countryCode string) string {
+	return fmt.Sprintf(
+		`<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+<soapenv:Header/>
+<soapenv:Body>
+  <checkVat xmlns="urn:ec.europa.eu:taxud:vies:services:checkVat:types">
+	<countryCode>%s</countryCode>
+	<vatNumber>%s</vatNumber>
+  </checkVat>
+</soapenv:Body>
+</soapenv:Envelope>`,
+		vatNumber,
+		countryCode,
+	)
+}
+
+func expectedViesResponse(vatNumber string, countryCode string, isValid bool) string {
+	isValidString := "true"
+	if !isValid {
+		isValidString = "false"
 	}
 
-	valid, _ = ValidateNumberExistence("NL123456789B01")
-	if valid {
-		t.Error("Expected NL123456789B01 to not be a valid VAT number.")
-	}
+	return fmt.Sprintf(
+		`<env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/">
+			<env:Header/>
+			<env:Body>
+				<ns2:checkVatResponse xmlns:ns2="urn:ec.europa.eu:taxud:vies:services:checkVat:types">
+					<ns2:countryCode>%s</ns2:countryCode>
+					<ns2:vatNumber>%s</ns2:vatNumber>
+					<ns2:requestDate>2024-01-24+01:00</ns2:requestDate>
+					<ns2:valid>%s</ns2:valid>
+					<ns2:name>VAT HOLDER'S NAME'</ns2:name>
+					<ns2:address>VAT HOLDER'S ADDRESS</ns2:address>
+				</ns2:checkVatResponse>
+			</env:Body>
+		</env:Envelope>`,
+		vatNumber,
+		countryCode,
+		isValidString,
+	)
 }
