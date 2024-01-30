@@ -182,15 +182,15 @@ func TestValidateNumberFormat(t *testing.T) {
 
 var lookupTests = []struct {
 	fullVatNumber    string
-	vatNumber        string
 	countryCode      string
+	vatNumber        string
 	isValid          bool
 	expectedResponse string
 	expectedError    *error
 }{
 	{"BE0472429986", "BE", "0472429986", true, "", nil},
 	{"NL123456789B01", "NL", "123456789B01", false, "", nil},
-	{"Hi", "", "Hi", false, "", &ErrInvalidVATNumber},
+	{"Hi", "HI", "", false, "", &ErrInvalidVATNumber},
 	{"INVALID INPUT", "IN", "VALID INPUT", false, "INVALID_INPUT", &ErrInvalidVATNumber},
 	{"BE0472429986", "BE", "0472429986", true, "MS_UNAVAILABLE", &ErrServiceUnavailable},
 	{"BE0472429986", "BE", "0472429986", true, "MS_MAX_CONCURRENT_REQ", &ErrServiceUnavailable},
@@ -251,8 +251,8 @@ func expectedViesRequestEnvelope(vatNumber string, countryCode string) string {
   </checkVat>
 </soapenv:Body>
 </soapenv:Envelope>`,
-		vatNumber,
 		countryCode,
+		vatNumber,
 	)
 }
 
@@ -276,8 +276,8 @@ func expectedViesResponse(vatNumber string, countryCode string, isValid bool) st
 				</ns2:checkVatResponse>
 			</env:Body>
 		</env:Envelope>`,
-		vatNumber,
 		countryCode,
+		vatNumber,
 		isValidString,
 	)
 }
