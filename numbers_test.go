@@ -257,11 +257,6 @@ func expectedViesRequestEnvelope(vatNumber string, countryCode string) string {
 }
 
 func expectedViesResponse(vatNumber string, countryCode string, isValid bool) string {
-	isValidString := "true"
-	if !isValid {
-		isValidString = "false"
-	}
-
 	return fmt.Sprintf(
 		`<env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/">
 			<env:Header/>
@@ -278,6 +273,6 @@ func expectedViesResponse(vatNumber string, countryCode string, isValid bool) st
 		</env:Envelope>`,
 		countryCode,
 		vatNumber,
-		isValidString,
+		strconv.FormatBool(isValid),
 	)
 }
