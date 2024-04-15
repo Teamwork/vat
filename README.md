@@ -2,8 +2,8 @@ Package vat
 ===
 
 ![Build](https://github.com/Teamwork/vat/actions/workflows/build.yml/badge.svg)
-[![Go Report Card](https://goreportcard.com/badge/github.com/Teamwork/vat)](https://goreportcard.com/report/github.com/Teamwork/vat)
-[![GoDoc](https://godoc.org/github.com/Teamwork/vat?status.svg)](https://godoc.org/github.com/Teamwork/vat)
+[![Go Report Card](https://goreportcard.com/badge/github.com/teamwork/vat)](https://goreportcard.com/report/github.com/teamwork/vat)
+[![GoDoc](https://godoc.org/github.com/teamwork/vat?status.svg)](https://godoc.org/github.com/teamwork/vat)
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/teamwork/vat/master/LICENSE)
 
 Package for validating VAT numbers & retrieving VAT rates (from [ibericode/vat-rates](https://github.com/ibericode/vat-rates)) in Go.

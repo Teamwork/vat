@@ -1,4 +1,4 @@
-module github.com/teamwork/vat
+module github.com/teamwork/vat/v2
 
 go 1.21
 
