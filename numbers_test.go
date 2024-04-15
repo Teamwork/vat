@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/teamwork/vat/mocks"
+	"github.com/teamwork/vat/v2/mocks"
 )
 
 var tests = []struct {
