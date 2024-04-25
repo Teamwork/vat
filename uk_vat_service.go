@@ -1,7 +1,6 @@
 package vat
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -37,7 +36,7 @@ func (s *ukVATService) Validate(vatNumber string) error {
 	}
 	if response.StatusCode != http.StatusOK {
 		return ErrServiceUnavailable{
-			Err: errors.New(fmt.Sprintf("unexpected status code from UK VAT API: %d", response.StatusCode)),
+			Err: fmt.Errorf("unexpected status code from UK VAT API: %d", response.StatusCode),
 		}
 	}
 

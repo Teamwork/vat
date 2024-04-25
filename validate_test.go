@@ -192,7 +192,7 @@ func TestValidateExists(t *testing.T) {
 		{"INVALID INPUT", mockViesService, ErrInvalidVATNumberFormat},
 		{"BE0472429986", mockViesService, ErrServiceUnavailable{Err: nil}},
 		{"GB333289454", mockUKVATService, nil},
-		// XI is Northern Ireland, which while part of the UK is actually still validated by VIES and not the UK validator service
+		// XI is Northern Ireland, which while part of the UK is actually still validated by VIES
 		{"XI0472429986", mockViesService, nil},
 	}
 

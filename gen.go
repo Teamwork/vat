@@ -2,4 +2,4 @@
 
 package vat
 
-import _ "github.com/golang/mock/mockgen/model"
+import _ "github.com/golang/mock/mockgen/model" // Blank import to ensure the model is included in the binary.
