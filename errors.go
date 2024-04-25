@@ -17,10 +17,12 @@ var ErrInvalidCountryCode = errors.New("vat: unknown country code")
 // ErrInvalidRateLevel will be returned when getting wrong rate level
 var ErrInvalidRateLevel = errors.New("vat: unknown rate level")
 
+// ErrServiceUnavailable will be returned when the service is unreachable
 type ErrServiceUnavailable struct {
 	Err error
 }
 
+// Error returns the error message
 func (e ErrServiceUnavailable) Error() string {
 	return fmt.Sprintf("vat: service is unreachable: %v", e.Err)
 }
@@ -30,6 +32,7 @@ type ErrUnexpected struct {
 	Err error
 }
 
+// Error returns the error message
 func (e ErrUnexpected) Error() string {
 	return fmt.Sprintf("vat: unexpected error: %v", e.Err)
 }

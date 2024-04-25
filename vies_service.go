@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/xml"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -34,7 +33,6 @@ func (s *viesService) Validate(vatNumber string) error {
 
 	xmlRes, err := io.ReadAll(res.Body)
 	if err != nil {
-		log.Printf("Error reading VIES response: %v", err)
 		return ErrUnexpected{Err: err}
 	}
 

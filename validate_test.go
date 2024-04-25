@@ -170,7 +170,7 @@ func TestValidateFormat(t *testing.T) {
 	}
 }
 
-func TestLookupValidateNumberExistence(t *testing.T) {
+func TestValidateExists(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
