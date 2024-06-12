@@ -63,7 +63,7 @@ func (s *viesService) Validate(vatNumber string) error {
 		}
 	}
 	if err = xml.Unmarshal(xmlRes, &rd); err != nil {
-		return ErrUnexpected{Err: err}
+		return ErrServiceUnavailable{Err: err} // assume if response data doesn't match the struct, the service is down
 	}
 
 	r := &viesResponse{

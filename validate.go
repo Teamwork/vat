@@ -58,6 +58,7 @@ func ValidateFormat(vatNumber string) error {
 	}
 
 	vatNumber = strings.ToUpper(vatNumber)
+
 	pattern, ok := patterns[vatNumber[0:2]]
 	if !ok {
 		return ErrInvalidCountryCode
@@ -78,6 +79,8 @@ func ValidateExists(vatNumber string) error {
 	if len(vatNumber) < 3 {
 		return ErrInvalidVATNumberFormat
 	}
+
+	vatNumber = strings.ToUpper(vatNumber)
 
 	lookupService := ViesLookupService
 	if strings.HasPrefix(vatNumber, "GB") {

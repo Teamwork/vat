@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 )
 
 // ukVATService is service that calls a UK VAT API to validate UK VAT numbers.
@@ -11,16 +12,14 @@ type ukVATService struct{}
 
 // Validate checks if the given VAT number exists and is active. If no error is returned, then it is.
 func (s *ukVATService) Validate(vatNumber string) error {
-
-	prefix := vatNumber[0:2]
-	number := vatNumber[2:]
+	vatNumber = strings.ToUpper(vatNumber)
 
 	// Only VAT numbers starting with "GB" are supported by this service. All others should go through the VIES service.
-	if prefix != "GB" {
+	if !strings.HasPrefix(vatNumber, "GB") {
 		return ErrInvalidCountryCode
 	}
 
-	response, err := http.Get(fmt.Sprintf(ukVATServiceURL, number))
+	response, err := http.Get(fmt.Sprintf(ukVATServiceURL, vatNumber[2:]))
 	if err != nil {
 		return ErrServiceUnavailable{Err: err}
 	}
