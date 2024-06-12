@@ -33,7 +33,7 @@ func (s *viesService) Validate(vatNumber string) error {
 
 	xmlRes, err := io.ReadAll(res.Body)
 	if err != nil {
-		return ErrUnexpected{Err: err}
+		return ErrServiceUnavailable{Err: err} // assume if we can't read the body then VIES gave us a bad response
 	}
 
 	// check if response contains "INVALID_INPUT" string

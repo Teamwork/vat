@@ -26,13 +26,3 @@ type ErrServiceUnavailable struct {
 func (e ErrServiceUnavailable) Error() string {
 	return fmt.Sprintf("vat: service is unreachable: %v", e.Err)
 }
-
-// ErrUnexpected will be returned when an unexpected error occurs
-type ErrUnexpected struct {
-	Err error
-}
-
-// Error returns the error message
-func (e ErrUnexpected) Error() string {
-	return fmt.Sprintf("vat: unexpected error: %v", e.Err)
-}

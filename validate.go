@@ -66,7 +66,7 @@ func ValidateFormat(vatNumber string) error {
 
 	matched, err := regexp.MatchString(fmt.Sprintf("^%s$", pattern), vatNumber[2:])
 	if err != nil {
-		return ErrUnexpected{Err: err}
+		return err
 	}
 	if !matched {
 		return ErrInvalidVATNumberFormat
