@@ -19,7 +19,10 @@ func (s *ukVATService) Validate(vatNumber string) error {
 		return ErrInvalidCountryCode
 	}
 
-	response, err := http.Get(fmt.Sprintf(ukVATServiceURL, vatNumber[2:]))
+	client := http.Client{
+		Timeout: serviceTimeout,
+	}
+	response, err := client.Get(fmt.Sprintf(ukVATServiceURL, vatNumber[2:]))
 	if err != nil {
 		return ErrServiceUnavailable{Err: err}
 	}

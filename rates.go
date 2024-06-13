@@ -83,7 +83,7 @@ func GetRates() ([]CountryRates, error) {
 // FetchRates fetches the latest VAT rates from ibericode/vat-rates and updates the in-memory rates
 func FetchRates() ([]CountryRates, error) {
 	client := http.Client{
-		Timeout: time.Duration(ViesServiceTimeout) * time.Second,
+		Timeout: serviceTimeout,
 	}
 	r, err := client.Get("https://raw.githubusercontent.com/ibericode/vat-rates/master/vat-rates.json")
 	if err != nil {
