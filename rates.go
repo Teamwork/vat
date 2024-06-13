@@ -2,7 +2,6 @@ package vat
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 	"strings"
 	"sync"
@@ -23,12 +22,6 @@ type CountryRates struct {
 
 var mutex = &sync.Mutex{} // protect countriesRates
 var countriesRates []CountryRates
-
-// ErrInvalidCountryCode will be returned when calling GetCountryRates with an invalid country code
-var ErrInvalidCountryCode = errors.New("vat: unknown country code")
-
-// ErrInvalidRateLevel will be returned when getting wrong rate level
-var ErrInvalidRateLevel = errors.New("vat: unknown rate level")
 
 // GetRateOn returns the effective VAT rate on a given date
 func (cr *CountryRates) GetRateOn(t time.Time, level string) (float32, error) {
@@ -90,7 +83,7 @@ func GetRates() ([]CountryRates, error) {
 // FetchRates fetches the latest VAT rates from ibericode/vat-rates and updates the in-memory rates
 func FetchRates() ([]CountryRates, error) {
 	client := http.Client{
-		Timeout: (time.Duration(ServiceTimeout) * time.Second),
+		Timeout: time.Duration(ViesServiceTimeout) * time.Second,
 	}
 	r, err := client.Get("https://raw.githubusercontent.com/ibericode/vat-rates/master/vat-rates.json")
 	if err != nil {
@@ -111,7 +104,7 @@ func FetchRates() ([]CountryRates, error) {
 		return nil, err
 	}
 
-	rates := []CountryRates{}
+	var rates []CountryRates
 	for code, periods := range apiResponse.Items {
 		rate := CountryRates{CountryCode: code}
 		for _, period := range periods {
