@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"strings"
-	"time"
 )
 
 // LookupServiceInterface is an interface for the service that calls external services to validate VATs.
@@ -106,15 +105,12 @@ func (s *viesService) getEnvelope(n string) string {
 func (s *viesService) lookup(envelope string) (*http.Response, error) {
 	envelopeBuffer := bytes.NewBufferString(envelope)
 	client := http.Client{
-		Timeout: time.Duration(ViesServiceTimeout) * time.Second,
+		Timeout: serviceTimeout,
 	}
 	return client.Post(viesServiceURL, "text/xml;charset=UTF-8", envelopeBuffer)
 }
 
 const viesServiceURL = "https://ec.europa.eu/taxation_customs/vies/services/checkVatService"
-
-// ViesServiceTimeout is the timeout for the VIES service
-const ViesServiceTimeout = 10
 
 // viesResponse holds the response data from the Vies call
 type viesResponse struct {

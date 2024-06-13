@@ -15,8 +15,17 @@ Get VAT rate that is currently in effect for a given country
 */
 package vat
 
+import "time"
+
 // ViesLookupService is the interface for the VIES VAT number validation service
 var ViesLookupService LookupServiceInterface = &viesService{}
 
 // UKVATLookupService is the interface for the UK VAT number validation service
 var UKVATLookupService LookupServiceInterface = &ukVATService{}
+
+var serviceTimeout = time.Second * 60
+
+// SetServiceTimeout sets the timeout for the external VAT lookup services.
+func SetServiceTimeout(timeout time.Duration) {
+	serviceTimeout = timeout
+}
