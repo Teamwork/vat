@@ -23,9 +23,9 @@ var ViesLookupService LookupServiceInterface = &viesService{}
 // UKVATLookupService is the interface for the UK VAT number validation service
 var UKVATLookupService LookupServiceInterface = &ukVATService{}
 
-var serviceTimeout = time.Duration(60) * time.Second
+var serviceTimeout = time.Second * 60
 
-// SetServiceTimeout sets the timeout in seconds for the external VAT lookup services.
-func SetServiceTimeout(seconds int) {
-	serviceTimeout = time.Duration(seconds) * time.Second
+// SetServiceTimeout sets the timeout for the external VAT lookup services.
+func SetServiceTimeout(timeout time.Duration) {
+	serviceTimeout = timeout
 }
