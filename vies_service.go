@@ -114,7 +114,7 @@ func (s *viesService) lookup(envelope string) (*http.Response, error) {
 const viesServiceURL = "https://ec.europa.eu/taxation_customs/vies/services/checkVatService"
 
 // ViesServiceTimeout is the timeout for the VIES service
-const ViesServiceTimeout = 10
+var ViesServiceTimeout = 10
 
 // viesResponse holds the response data from the Vies call
 type viesResponse struct {
