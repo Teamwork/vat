@@ -3,6 +3,7 @@ package vat
 import (
 	"bytes"
 	"encoding/xml"
+	"errors"
 	"io"
 	"net/http"
 	"strings"
@@ -42,9 +43,10 @@ func (s *viesService) Validate(vatNumber string) error {
 	}
 
 	// check if response contains "MS_UNAVAILABLE" string
-	if bytes.Contains(xmlRes, []byte("MS_UNAVAILABLE")) ||
-		bytes.Contains(xmlRes, []byte("MS_MAX_CONCURRENT_REQ")) {
-		return ErrServiceUnavailable{Err: nil}
+	if bytes.Contains(xmlRes, []byte("MS_UNAVAILABLE")) {
+		return ErrServiceUnavailable{Err: errors.New("vies reports service is unavailable")}
+	} else if bytes.Contains(xmlRes, []byte("MS_MAX_CONCURRENT_REQ")) {
+		return ErrServiceUnavailable{Err: errors.New("max concurrent requests limit hit")}
 	}
 
 	var rd struct {
