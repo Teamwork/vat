@@ -26,3 +26,18 @@ type ErrServiceUnavailable struct {
 func (e ErrServiceUnavailable) Error() string {
 	return fmt.Sprintf("vat: service is unreachable: %v", e.Err)
 }
+
+// ErrUnableToGenerateUKAccessToken will be returned if the UK API Access token could not be generated
+type ErrUnableToGenerateUKAccessToken struct {
+	Err error
+}
+
+// Error returns the error message
+func (e ErrUnableToGenerateUKAccessToken) Error() string {
+	return fmt.Sprintf("vat: Error generating UK API Access token: %v", e.Err)
+}
+
+// ErrMissingUKAccessToken will be returned if the UK API Access token is missing
+var ErrMissingUKAccessToken = errors.New(
+	"vat: missing UK API Access token. Run `vat.GenerateUKAccessToken` to generate one",
+)

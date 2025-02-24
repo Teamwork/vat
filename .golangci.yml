@@ -1,7 +1,4 @@
 run:
-  skip-dirs:
-    - testdata
-  deadline: 240s
   tests: true
 
 linters:

@@ -1,9 +1,13 @@
 package vat
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -11,7 +15,17 @@ import (
 type ukVATService struct{}
 
 // Validate checks if the given VAT number exists and is active. If no error is returned, then it is.
-func (s *ukVATService) Validate(vatNumber string) error {
+func (s *ukVATService) Validate(vatNumber string, opts ValidatorOpts) error {
+	if opts.UKAccessToken == "" {
+		// if no access token is provided, try to generate one
+		// (it is recommended to generate one separately and cache it and pass it in as an option here)
+		accessToken, err := GenerateUKAccessToken(opts)
+		if err != nil {
+			return ErrMissingUKAccessToken
+		}
+		opts.UKAccessToken = accessToken.Token
+	}
+
 	vatNumber = strings.ToUpper(vatNumber)
 
 	// Only VAT numbers starting with "GB" are supported by this service. All others should go through the VIES service.
@@ -19,10 +33,25 @@ func (s *ukVATService) Validate(vatNumber string) error {
 		return ErrInvalidCountryCode
 	}
 
-	client := http.Client{
+	apiURL := fmt.Sprintf(
+		"%s/organisations/vat/check-vat-number/lookup/%s",
+		ukVatServiceURL(opts.IsUKTest),
+		vatNumber[2:],
+	)
+
+	req, err := http.NewRequest("GET", apiURL, nil)
+	if err != nil {
+		return ErrServiceUnavailable{Err: err}
+	}
+
+	req.Header.Set("Accept", "application/vnd.hmrc.2.0+json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", opts.UKAccessToken))
+
+	client := &http.Client{
 		Timeout: serviceTimeout,
 	}
-	response, err := client.Get(fmt.Sprintf(ukVATServiceURL, vatNumber[2:]))
+
+	response, err := client.Do(req)
 	if err != nil {
 		return ErrServiceUnavailable{Err: err}
 	}
@@ -46,6 +75,73 @@ func (s *ukVATService) Validate(vatNumber string) error {
 	return nil
 }
 
+// UKAccessToken is a contains access token information used to authenticate with the UK VAT API.
+type UKAccessToken struct {
+	Token               string `json:"access_token"`
+	SecondsUntilExpires int    `json:"expires_in"`
+	IsTest              bool   `json:"-"`
+}
+
+// GenerateUKAccessToken generates an access token from given client credentials for use with the UK VAT API.
+func GenerateUKAccessToken(opts ValidatorOpts) (*UKAccessToken, error) {
+	if opts.UKClientID == "" || opts.UKClientSecret == "" {
+		return nil, ErrUnableToGenerateUKAccessToken{Err: errors.New("missing client ID or secret")}
+	}
+
+	data := url.Values{}
+	data.Set("client_secret", opts.UKClientSecret)
+	data.Set("client_id", opts.UKClientID)
+	data.Set("grant_type", "client_credentials")
+	data.Set("scope", "read:vat")
+
+	req, err := http.NewRequest(
+		"POST",
+		fmt.Sprintf("%s/oauth/token", ukVatServiceURL(opts.IsUKTest)),
+		bytes.NewBufferString(data.Encode()),
+	)
+	if err != nil {
+		return nil, ErrUnableToGenerateUKAccessToken{Err: err}
+	}
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, ErrUnableToGenerateUKAccessToken{Err: err}
+	}
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(resp.Body)
+
+	if resp.StatusCode != http.StatusOK {
+		respBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, ErrUnableToGenerateUKAccessToken{Err: fmt.Errorf("unexpected status code: %d", resp.StatusCode)}
+		}
+		return nil, ErrUnableToGenerateUKAccessToken{
+			Err: fmt.Errorf("unexpected status code: %d: %s", resp.StatusCode, respBody),
+		}
+	}
+
+	var token UKAccessToken
+	if err := json.NewDecoder(resp.Body).Decode(&token); err != nil {
+		return nil, ErrUnableToGenerateUKAccessToken{Err: err}
+	}
+	if opts.IsUKTest {
+		token.IsTest = true
+	}
+
+	return &token, nil
+}
+
+func ukVatServiceURL(isTest bool) string {
+	if isTest {
+		return fmt.Sprintf("https://test-%s", ukVATServiceDomain)
+	}
+	return fmt.Sprintf("https://%s", ukVATServiceDomain)
+}
+
 // API Documentation:
-// https://developer.service.hmrc.gov.uk/api-documentation/docs/api/service/vat-registered-companies-api/1.0
-const ukVATServiceURL = "https://api.service.hmrc.gov.uk/organisations/vat/check-vat-number/lookup/%s"
+// https://developer.service.hmrc.gov.uk/api-documentation/docs/api/service/vat-registered-companies-api/2.0/oas/page
+const ukVATServiceDomain = "api.service.hmrc.gov.uk"

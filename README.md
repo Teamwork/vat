@@ -35,7 +35,7 @@ EU VAT numbers are looked up using the [VIES VAT validation API](http://ec.europ
 
 UK VAT numbers are looked up
 using [UK GOV VAT validation API](https://developer.service.hmrc.gov.uk/api-documentation/docs/api/service/vat-registered-companies-api/1.0)
-.
+(requires [signing up for the UK API](#accessing-the-uk-vat-api)).
 
 ```go
 package main
@@ -81,6 +81,38 @@ func main() {
 	fmt.Printf("Standard VAT rate for IE is %.2f", r)
 	// Output: Standard VAT rate for IE is 23.00
 }
+```
+
+# Accessing the UK VAT API
+
+For validating VAT numbers that begin with "GB" you will need
+to [sign up to gain access to the UK government's VAT API](https://developer.service.hmrc.gov.uk/api-documentation/docs/using-the-hub).
+
+Once you have signed up and acquire a client ID and client secret, here's how to generate and use an access token:
+
+```go
+package main
+
+import "github.com/teamwork/vat"
+
+func main() {
+	var ukAccessToken *vat.UKAccessToken
+	ukAccessToken, err := vat.GenerateUKAccessToken(vat.ValidatorOpts{
+		UKClientID:     "yourClientID",
+		UKClientSecret: "yourClientSecret",
+		IsUKTest:       true, // set this if you are testing this in their sandbox test API
+	})
+	if err != nil {
+		panic(err)
+	}
+	// Recommended to cache the access token until it expires
+
+	err := vat.Validate("GB123456789", vat.ValidatorOpts{
+		UKAccessToken: ukAccessToken.Token,
+		IsUKTest:      true, // if token created in test mode, run validation in test mode
+	})
+}
+
 ```
 
 ## License

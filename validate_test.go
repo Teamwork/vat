@@ -1,11 +1,11 @@
 package vat
 
 import (
+	"errors"
 	"strconv"
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/teamwork/vat/v3/mocks"
 )
 
 var tests = []struct {
@@ -164,7 +164,7 @@ func BenchmarkValidateFormat(b *testing.B) {
 func TestValidateFormat(t *testing.T) {
 	for _, test := range tests {
 		err := ValidateFormat(test.number)
-		if err != test.expectedError {
+		if !errors.Is(err, test.expectedError) {
 			t.Errorf("Expected <%v> for %v, got <%v>", test.expectedError, test.number, err)
 		}
 	}
@@ -174,8 +174,8 @@ func TestValidateExists(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockViesService := mocks.NewMockLookupServiceInterface(ctrl)
-	mockUKVATService := mocks.NewMockLookupServiceInterface(ctrl)
+	mockViesService := NewMockLookupServiceInterface(ctrl)
+	mockUKVATService := NewMockLookupServiceInterface(ctrl)
 	ViesLookupService = mockViesService
 	UKVATLookupService = mockUKVATService
 
@@ -183,7 +183,7 @@ func TestValidateExists(t *testing.T) {
 
 	var lookupTests = []struct {
 		vatNumber     string
-		service       *mocks.MockLookupServiceInterface
+		service       *MockLookupServiceInterface
 		expectedError error
 	}{
 		{"BE0472429986", mockViesService, ErrVATNumberNotFound},
@@ -198,11 +198,11 @@ func TestValidateExists(t *testing.T) {
 
 	for _, test := range lookupTests {
 		if len(test.vatNumber) >= 3 {
-			test.service.EXPECT().Validate(test.vatNumber).Return(test.expectedError)
+			test.service.EXPECT().Validate(test.vatNumber, ValidatorOpts{}).Return(test.expectedError)
 		}
 
 		err := ValidateExists(test.vatNumber)
-		if err != test.expectedError {
+		if !errors.Is(err, test.expectedError) {
 			t.Errorf("Expected <%v> for %v, got <%v>", test.expectedError, test.vatNumber, err)
 		}
 	}
