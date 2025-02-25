@@ -90,7 +90,7 @@ func ValidateExists(vatNumber string, optsSlice ...ValidatorOpts) error {
 		lookupService = UKVATLookupService
 	}
 
-	var opts ValidatorOpts
+	opts := ValidatorOpts{}
 	if len(optsSlice) > 0 {
 		opts = optsSlice[0]
 	}
