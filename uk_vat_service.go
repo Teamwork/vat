@@ -75,7 +75,7 @@ func (s *ukVATService) Validate(vatNumber string, opts ValidatorOpts) error {
 	return nil
 }
 
-// UKAccessToken is a contains access token information used to authenticate with the UK VAT API.
+// UKAccessToken contains access token information used to authenticate with the UK VAT API.
 type UKAccessToken struct {
 	Token               string `json:"access_token"`
 	SecondsUntilExpires int    `json:"expires_in"`
