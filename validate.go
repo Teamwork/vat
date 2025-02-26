@@ -7,12 +7,15 @@ import (
 )
 
 // Validate validates a VAT number by both format and existence. If no error then it is valid.
-func Validate(vatNumber string) error {
+// Note: for backwards compatibility this is a variadic function that effectively makes it optional to pass in options.
+// If no opts are passed in, VIES numbers will still be validated as always, but GB numbers will not.
+// If multiple opts arguments passed in, only the first one is used.
+func Validate(vatNumber string, opts ...ValidatorOpts) error {
 	err := ValidateFormat(vatNumber)
 	if err != nil {
 		return err
 	}
-	return ValidateExists(vatNumber)
+	return ValidateExists(vatNumber, opts...)
 }
 
 // ValidateFormat validates a VAT number by its format. If no error is returned then it is valid.
@@ -75,7 +78,7 @@ func ValidateFormat(vatNumber string) error {
 }
 
 // ValidateExists validates that the given VAT number exists in the external lookup service.
-func ValidateExists(vatNumber string) error {
+func ValidateExists(vatNumber string, optsSlice ...ValidatorOpts) error {
 	if len(vatNumber) < 3 {
 		return ErrInvalidVATNumberFormat
 	}
@@ -87,5 +90,18 @@ func ValidateExists(vatNumber string) error {
 		lookupService = UKVATLookupService
 	}
 
-	return lookupService.Validate(vatNumber)
+	opts := ValidatorOpts{}
+	if len(optsSlice) > 0 {
+		opts = optsSlice[0]
+	}
+
+	return lookupService.Validate(vatNumber, opts)
+}
+
+// ValidatorOpts are options for the VAT number validator.
+type ValidatorOpts struct {
+	UKClientID     string
+	UKClientSecret string
+	UKAccessToken  string
+	IsUKTest       bool
 }

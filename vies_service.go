@@ -11,14 +11,15 @@ import (
 
 // LookupServiceInterface is an interface for the service that calls external services to validate VATs.
 type LookupServiceInterface interface {
-	Validate(vatNumber string) error
+	Validate(vatNumber string, opts ValidatorOpts) error
 }
 
 // viesService validates EU VAT numbers with the VIES service
 type viesService struct{}
 
 // Validate returns whether the given VAT number is valid or not
-func (s *viesService) Validate(vatNumber string) error {
+// There currently are no VIES options, so the "opts" parameter is here for interface compliance but ignored
+func (s *viesService) Validate(vatNumber string, _ ValidatorOpts) error {
 	if len(vatNumber) < 3 {
 		return ErrInvalidVATNumberFormat
 	}
