@@ -8,7 +8,7 @@ import (
 
 // Validate validates a VAT number by both format and existence. If no error then it is valid.
 // Note: for backwards compatibility this is a variadic function that effectively makes it optional to pass in options.
-// If no opts are passed in, functionality does not change.
+// If no opts are passed in, VIES numbers will still be validated as always, but GB numbers will not.
 // If multiple opts arguments passed in, only the first one is used.
 func Validate(vatNumber string, opts ...ValidatorOpts) error {
 	err := ValidateFormat(vatNumber)
