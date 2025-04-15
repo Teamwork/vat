@@ -33,7 +33,7 @@ func TestUKVATService(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	opts.UKAccessToken = token.Token
+	opts.UKAccessToken = token
 
 	for _, test := range ukTests {
 		err := UKVATLookupService.Validate(test.vatNumber, opts)
