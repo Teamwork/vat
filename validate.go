@@ -102,6 +102,6 @@ func ValidateExists(vatNumber string, optsSlice ...ValidatorOpts) error {
 type ValidatorOpts struct {
 	UKClientID     string
 	UKClientSecret string
-	UKAccessToken  string
+	UKAccessToken  *UKAccessToken
 	IsUKTest       bool
 }

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 // ukVATService is service that calls a UK VAT API to validate UK VAT numbers.
@@ -16,14 +17,14 @@ type ukVATService struct{}
 
 // Validate checks if the given VAT number exists and is active. If no error is returned, then it is.
 func (s *ukVATService) Validate(vatNumber string, opts ValidatorOpts) error {
-	if opts.UKAccessToken == "" {
-		// if no access token is provided, try to generate one
+	if opts.UKAccessToken == nil || opts.UKAccessToken.IsExpired() {
+		// if no access token is provided or if it's expired, try to generate one
 		// (it is recommended to generate one separately and cache it and pass it in as an option here)
 		accessToken, err := GenerateUKAccessToken(opts)
 		if err != nil {
 			return ErrMissingUKAccessToken
 		}
-		opts.UKAccessToken = accessToken.Token
+		opts.UKAccessToken = accessToken
 	}
 
 	vatNumber = strings.ToUpper(vatNumber)
@@ -45,7 +46,7 @@ func (s *ukVATService) Validate(vatNumber string, opts ValidatorOpts) error {
 	}
 
 	req.Header.Set("Accept", "application/vnd.hmrc.2.0+json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", opts.UKAccessToken))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", opts.UKAccessToken.Token))
 
 	client := &http.Client{
 		Timeout: serviceTimeout,
@@ -77,9 +78,15 @@ func (s *ukVATService) Validate(vatNumber string, opts ValidatorOpts) error {
 
 // UKAccessToken contains access token information used to authenticate with the UK VAT API.
 type UKAccessToken struct {
-	Token               string `json:"access_token"`
-	SecondsUntilExpires int    `json:"expires_in"`
-	IsTest              bool   `json:"-"`
+	Token               string    `json:"access_token"`
+	SecondsUntilExpires int64     `json:"expires_in"`
+	ExpiresAt           time.Time `json:"expires_at"`
+	IsTest              bool      `json:"-"`
+}
+
+// IsExpired checks if the access token is expired.
+func (t UKAccessToken) IsExpired() bool {
+	return t.ExpiresAt.Before(time.Now())
 }
 
 // GenerateUKAccessToken generates an access token from given client credentials for use with the UK VAT API.
@@ -128,6 +135,8 @@ func GenerateUKAccessToken(opts ValidatorOpts) (*UKAccessToken, error) {
 	if err := json.NewDecoder(resp.Body).Decode(&token); err != nil {
 		return nil, ErrUnableToGenerateUKAccessToken{Err: err}
 	}
+	// set the expiration time to 1 minute before the actual expiration for safety
+	token.ExpiresAt = time.Now().Add(time.Duration(token.SecondsUntilExpires - 60))
 	if opts.IsUKTest {
 		token.IsTest = true
 	}
