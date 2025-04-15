@@ -84,6 +84,7 @@ type UKAccessToken struct {
 	IsTest              bool   `json:"-"`
 }
 
+// IsExpired checks if the access token is expired.
 func (t UKAccessToken) IsExpired() bool {
 	// for safety, consider it expired 1 minute before the actual expiration
 	return t.ExpiresAt-int64(60) < time.Now().Unix()
