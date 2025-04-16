@@ -11,6 +11,7 @@ import (
 // If no opts are passed in, VIES numbers will still be validated as always, but GB numbers will not.
 // If multiple opts arguments passed in, only the first one is used.
 func Validate(vatNumber string, opts ...ValidatorOpts) error {
+	fmt.Printf("VALIDATE CALLED WITH OPTS: %+v\n", opts) // todo remove me
 	err := ValidateFormat(vatNumber)
 	if err != nil {
 		return err
