@@ -6,6 +6,7 @@ package vat
 import (
 	"errors"
 	"testing"
+	"time"
 )
 
 // test numbers to use with the UK VAT service API in their sandbox environment:
@@ -32,6 +33,14 @@ func TestUKVATService(t *testing.T) {
 	token, err := GenerateUKAccessToken(opts)
 	if err != nil {
 		t.Fatal(err)
+	}
+	// expect the token to be valid for 14400 seconds (4 hours),
+	// but with ExpireAt 60 seconds earlier to help ensure we generate a new one before old one expires
+	expectedExpiresAt := time.Now().Add(time.Duration(14400-60) * time.Second)
+	isExpiresAtCorrect := expectedExpiresAt.Sub(token.ExpiresAt).Seconds() <= 1 // 1 second leeway for test to run
+
+	if token.SecondsUntilExpires != 14400 || !isExpiresAtCorrect {
+		t.Errorf("Expected token to be valid for 14400 seconds, got %d", token.SecondsUntilExpires)
 	}
 	opts.UKAccessToken = token
 
