@@ -147,6 +147,10 @@ func GenerateUKAccessToken(opts ValidatorOpts) (*UKAccessToken, error) {
 	if opts.IsUKTest {
 		token.IsTest = true
 	}
+	fmt.Printf("GENERATED UK Access token: %s\n", token.Token)                                                     // todo remove me
+	fmt.Printf("GENERATED UK Access token expires at: %s\n", token.ExpiresAt)                                      // todo remove me
+	fmt.Printf("GENERATED UK Access token expires in: %d seconds\n", int64(time.Until(token.ExpiresAt).Seconds())) // todo remove me
+	fmt.Printf("GENERATED UK Access token is expired: %t\n", token.IsExpired())                                    // todo remove me
 
 	return &token, nil
 }
