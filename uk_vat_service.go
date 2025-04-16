@@ -18,6 +18,12 @@ type ukVATService struct{}
 // Validate checks if the given VAT number exists and is active. If no error is returned, then it is.
 func (s *ukVATService) Validate(vatNumber string, opts ValidatorOpts) error {
 	fmt.Printf("Validating UK VAT WITH OPTS: %+v\n", opts) // todo remove me
+	if opts.UKAccessToken != nil {
+		fmt.Printf("UK Access token: %s\n", opts.UKAccessToken.Token)                                                     // todo remove me
+		fmt.Printf("UK Access token expires at: %s\n", opts.UKAccessToken.ExpiresAt)                                      // todo remove me
+		fmt.Printf("UK Access token expires in: %d seconds\n", int64(time.Until(opts.UKAccessToken.ExpiresAt).Seconds())) // todo remove me
+		fmt.Printf("UK Access token is expired: %t\n", opts.UKAccessToken.IsExpired())                                    // todo remove me
+	}
 	if opts.UKAccessToken == nil || opts.UKAccessToken.IsExpired() {
 		// if no access token is provided or if it's expired, try to generate one
 		// (it is recommended to generate one separately and cache it and pass it in as an option here)
