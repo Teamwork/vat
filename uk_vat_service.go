@@ -17,12 +17,15 @@ type ukVATService struct{}
 
 // Validate checks if the given VAT number exists and is active. If no error is returned, then it is.
 func (s *ukVATService) Validate(vatNumber string, opts ValidatorOpts) error {
-	fmt.Printf("Validating UK VAT WITH OPTS: %+v\n", opts) // todo remove me
+	fmt.Printf("VATREPO Validating UK VAT WITH OPTS: %+v\n", opts) // todo remove me
 	if opts.UKAccessToken != nil {
-		fmt.Printf("UK Access token: %s\n", opts.UKAccessToken.Token)                                                     // todo remove me
-		fmt.Printf("UK Access token expires at: %s\n", opts.UKAccessToken.ExpiresAt)                                      // todo remove me
-		fmt.Printf("UK Access token expires in: %d seconds\n", int64(time.Until(opts.UKAccessToken.ExpiresAt).Seconds())) // todo remove me
-		fmt.Printf("UK Access token is expired: %t\n", opts.UKAccessToken.IsExpired())                                    // todo remove me
+		fmt.Printf("VATREPO UK Access token: %s\n", opts.UKAccessToken.Token)                // todo remove me
+		fmt.Printf("VATREPO UK Access token expires at: %s\n", opts.UKAccessToken.ExpiresAt) // todo remove me
+		fmt.Printf(
+			"VATREPO UK Access token expires in: %d seconds\n",
+			int64(time.Until(opts.UKAccessToken.ExpiresAt).Seconds()),
+		) // todo remove me
+		fmt.Printf("VATREPO UK Access token is expired: %t\n", opts.UKAccessToken.IsExpired()) // todo remove me
 	}
 	if opts.UKAccessToken == nil || opts.UKAccessToken.IsExpired() {
 		// if no access token is provided or if it's expired, try to generate one
@@ -138,8 +141,18 @@ func GenerateUKAccessToken(opts ValidatorOpts) (*UKAccessToken, error) {
 		}
 	}
 
+	// Read the raw JSON response
+	rawResponse, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, ErrUnableToGenerateUKAccessToken{Err: err}
+	}
+
+	// Print the raw JSON response
+	fmt.Printf("VATREPO Raw JSON response generating access token: %s\n", rawResponse)
+
+	// Decode the JSON response into the UKAccessToken struct
 	var token UKAccessToken
-	if err := json.NewDecoder(resp.Body).Decode(&token); err != nil {
+	if err := json.Unmarshal(rawResponse, &token); err != nil {
 		return nil, ErrUnableToGenerateUKAccessToken{Err: err}
 	}
 	// set the expiration time to 1 minute before the actual expiration for safety
@@ -147,10 +160,13 @@ func GenerateUKAccessToken(opts ValidatorOpts) (*UKAccessToken, error) {
 	if opts.IsUKTest {
 		token.IsTest = true
 	}
-	fmt.Printf("GENERATED UK Access token: %s\n", token.Token)                                                     // todo remove me
-	fmt.Printf("GENERATED UK Access token expires at: %s\n", token.ExpiresAt)                                      // todo remove me
-	fmt.Printf("GENERATED UK Access token expires in: %d seconds\n", int64(time.Until(token.ExpiresAt).Seconds())) // todo remove me
-	fmt.Printf("GENERATED UK Access token is expired: %t\n", token.IsExpired())                                    // todo remove me
+	fmt.Printf("VATREPO GENERATED UK Access token: %s\n", token.Token)                // todo remove me
+	fmt.Printf("VATREPO GENERATED UK Access token expires at: %s\n", token.ExpiresAt) // todo remove me
+	fmt.Printf(
+		"VATREPO GENERATED UK Access token expires in: %d seconds\n",
+		int64(time.Until(token.ExpiresAt).Seconds()),
+	) // todo remove me
+	fmt.Printf("VATREPO GENERATED UK Access token is expired: %t\n", token.IsExpired()) // todo remove me
 
 	return &token, nil
 }
