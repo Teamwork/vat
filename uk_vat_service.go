@@ -136,7 +136,7 @@ func GenerateUKAccessToken(opts ValidatorOpts) (*UKAccessToken, error) {
 		return nil, ErrUnableToGenerateUKAccessToken{Err: err}
 	}
 	// set the expiration time to 1 minute before the actual expiration for safety
-	token.ExpiresAt = time.Now().Add(time.Duration(token.SecondsUntilExpires - 60))
+	token.ExpiresAt = time.Now().Add(time.Duration(token.SecondsUntilExpires-60) * time.Second)
 	if opts.IsUKTest {
 		token.IsTest = true
 	}
