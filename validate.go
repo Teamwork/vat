@@ -33,7 +33,7 @@ func ValidateFormat(vatNumber string) error {
 		"EL": `[0-9]{9}`,
 		"ES": `[A-Z][0-9]{7}[A-Z]|[0-9]{8}[A-Z]|[A-Z][0-9]{8}`,
 		"FI": `[0-9]{8}`,
-		"FR": `([A-Z]{2}|[0-9]{2})[0-9]{9}`,
+		"FR": `[A-Z0-9]{2}[0-9]{9}`,
 		// Supposedly the regex for GB numbers is `[0-9]{9}|[0-9]{12}|(GD|HA)[0-9]{3}`,
 		// but our validator service only accepts numbers with 9 or 12 digits following the country code.
 		// Seems like the official site only accepts 9 digits... https://www.gov.uk/check-uk-vat-number
