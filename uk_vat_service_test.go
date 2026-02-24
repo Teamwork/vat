@@ -5,8 +5,11 @@ package vat
 
 import (
 	"errors"
+	"os"
 	"testing"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 // test numbers to use with the UK VAT service API in their sandbox environment:
@@ -25,11 +28,21 @@ var ukTests = []struct {
 // TestUKVATService tests the UK VAT service. Just meant to be a quick way to check that this service is working.
 // Makes external calls that sometimes might fail. Do not include them in CI/CD.
 func TestUKVATService(t *testing.T) {
+	// Load environment variables from .env file
+	if err := godotenv.Load(); err != nil {
+		t.Fatalf("Error loading .env file: %v", err)
+	}
+
 	opts := ValidatorOpts{
-		UKClientID:     "yourClientID", // insert your own client ID and secret here. Do not commit real values.
-		UKClientSecret: "yourClientSecret",
+		UKClientID:     os.Getenv("CLIENT_ID"),
+		UKClientSecret: os.Getenv("SECRET"),
 		IsUKTest:       true,
 	}
+
+	if opts.UKClientID == "" || opts.UKClientSecret == "" {
+		t.Fatal("CLIENT_ID and SECRET must be set in .env file")
+	}
+
 	token, err := GenerateUKAccessToken(opts)
 	if err != nil {
 		t.Fatal(err)
