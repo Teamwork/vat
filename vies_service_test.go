@@ -6,6 +6,7 @@ package vat
 import (
 	"errors"
 	"testing"
+	"time"
 )
 
 var viesTests = []struct {
@@ -26,5 +27,6 @@ func TestViesService(t *testing.T) {
 		if !errors.Is(err, test.expectedError) {
 			t.Errorf("Expected <%v> for %v, got <%v>", test.expectedError, test.vatNumber, err)
 		}
+		time.Sleep(time.Second * 2) // delay to prevent rate limiting
 	}
 }
