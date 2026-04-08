@@ -34,11 +34,12 @@ func (m *MockLookupServiceInterface) EXPECT() *MockLookupServiceInterfaceMockRec
 }
 
 // Validate mocks base method.
-func (m *MockLookupServiceInterface) Validate(vatNumber string, opts ValidatorOpts) error {
+func (m *MockLookupServiceInterface) Validate(vatNumber string, opts ValidatorOpts) (*LookupResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Validate", vatNumber, opts)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(*LookupResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // Validate indicates an expected call of Validate.

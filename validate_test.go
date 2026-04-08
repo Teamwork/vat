@@ -201,13 +201,82 @@ func TestValidateExists(t *testing.T) {
 
 	for _, test := range lookupTests {
 		if len(test.vatNumber) >= 3 {
-			test.service.EXPECT().Validate(test.vatNumber, ValidatorOpts{}).Return(test.expectedError)
+			test.service.EXPECT().Validate(test.vatNumber, ValidatorOpts{}).Return(nil, test.expectedError)
 		}
 
-		err := ValidateExists(test.vatNumber)
+		_, err := ValidateExists(test.vatNumber)
 		if !errors.Is(err, test.expectedError) {
 			t.Errorf("Expected <%v> for %v, got <%v>", test.expectedError, test.vatNumber, err)
 		}
+	}
+}
+
+func TestValidateExistsIncludeResponse(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockViesService := NewMockLookupServiceInterface(ctrl)
+	mockUKVATService := NewMockLookupServiceInterface(ctrl)
+	ViesLookupService = mockViesService
+	UKVATLookupService = mockUKVATService
+
+	defer restoreLookupServices()
+
+	viesResp := &LookupResponse{
+		VIESResponse: &VIESResponse{
+			CountryCode: "NL",
+			VATNumber:   "123456789B01",
+			RequestDate: "2026-04-08+02:00",
+			Valid:       true,
+			Name:        "Test Company",
+			Address:     "123 Test St",
+		},
+	}
+	ukResp := &LookupResponse{
+		UKVATResponse: &UKVATResponse{
+			ProcessingDate: "2026-04-08",
+		},
+	}
+	ukResp.UKVATResponse.Target.Name = "UK Test Ltd"
+	ukResp.UKVATResponse.Target.VATNumber = "333289454"
+
+	opts := ValidatorOpts{IncludeResponse: true}
+
+	// VIES path: response is returned
+	mockViesService.EXPECT().Validate("NL123456789B01", opts).Return(viesResp, nil)
+	resp, err := ValidateExists("NL123456789B01", opts)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if resp == nil || resp.VIESResponse == nil {
+		t.Fatal("expected VIESResponse to be populated")
+	}
+	if resp.VIESResponse.Name != "Test Company" {
+		t.Errorf("expected Name 'Test Company', got %q", resp.VIESResponse.Name)
+	}
+
+	// UK path: response is returned
+	mockUKVATService.EXPECT().Validate("GB333289454", opts).Return(ukResp, nil)
+	resp, err = ValidateExists("GB333289454", opts)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if resp == nil || resp.UKVATResponse == nil {
+		t.Fatal("expected UKVATResponse to be populated")
+	}
+	if resp.UKVATResponse.Target.Name != "UK Test Ltd" {
+		t.Errorf("expected Target.Name 'UK Test Ltd', got %q", resp.UKVATResponse.Target.Name)
+	}
+
+	// VIES path: nil response when IncludeResponse is false
+	defaultOpts := ValidatorOpts{}
+	mockViesService.EXPECT().Validate("NL123456789B01", defaultOpts).Return(nil, nil)
+	resp, err = ValidateExists("NL123456789B01")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if resp != nil {
+		t.Errorf("expected nil response when IncludeResponse is false, got %+v", resp)
 	}
 }
 
