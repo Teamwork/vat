@@ -218,11 +218,11 @@ type stubLookupService struct {
 	err      error
 }
 
-func (s *stubLookupService) Validate(vatNumber string, opts ValidatorOpts) error {
+func (s *stubLookupService) Validate(_ string, _ ValidatorOpts) error {
 	return s.err
 }
 
-func (s *stubLookupService) validateWithResponse(vatNumber string, opts ValidatorOpts) (*LookupResponse, error) {
+func (s *stubLookupService) validateWithResponse(_ string, _ ValidatorOpts) (*LookupResponse, error) {
 	return s.response, s.err
 }
 
