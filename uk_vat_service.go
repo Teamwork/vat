@@ -16,8 +16,13 @@ import (
 type ukVATService struct{}
 
 // Validate checks if the given VAT number exists and is active. If no error is returned, then it is.
-// When opts.IncludeResponse is true, the full UK VAT API response is returned in LookupResponse.UKVATResponse.
-func (s *ukVATService) Validate(vatNumber string, opts ValidatorOpts) (*LookupResponse, error) {
+func (s *ukVATService) Validate(vatNumber string, opts ValidatorOpts) error {
+	_, err := s.validateWithResponse(vatNumber, opts)
+	return err
+}
+
+// validateWithResponse performs validation and returns the full UK VAT API response.
+func (s *ukVATService) validateWithResponse(vatNumber string, opts ValidatorOpts) (*LookupResponse, error) {
 	if opts.UKAccessToken == nil || opts.UKAccessToken.IsExpired() {
 		// if no access token is provided or if it's expired, try to generate one
 		// (it is recommended to generate one separately and cache it and pass it in as an option here)
@@ -74,14 +79,11 @@ func (s *ukVATService) Validate(vatNumber string, opts ValidatorOpts) (*LookupRe
 	}
 
 	// If we receive a valid 200 response from this API, it means the VAT number exists and is valid
-	if opts.IncludeResponse {
-		var ukResp UKVATResponse
-		if err := json.NewDecoder(response.Body).Decode(&ukResp); err != nil {
-			return nil, ErrServiceUnavailable{Err: err}
-		}
-		return &LookupResponse{UKVATResponse: &ukResp}, nil
+	var ukResp UKVATResponse
+	if err := json.NewDecoder(response.Body).Decode(&ukResp); err != nil {
+		return nil, ErrServiceUnavailable{Err: err}
 	}
-	return nil, nil
+	return &LookupResponse{UKVATResponse: &ukResp}, nil
 }
 
 // UKAccessToken contains access token information used to authenticate with the UK VAT API.

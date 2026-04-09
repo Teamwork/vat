@@ -23,7 +23,7 @@ var viesTests = []struct {
 // The external VIES calls are not always reliable so sometimes these tests may fail. Do not include them in CI/CD.
 func TestViesService(t *testing.T) {
 	for _, test := range viesTests {
-		_, err := ViesLookupService.Validate(test.vatNumber, ValidatorOpts{})
+		err := ViesLookupService.Validate(test.vatNumber, ValidatorOpts{})
 		if !errors.Is(err, test.expectedError) {
 			t.Errorf("Expected <%v> for %v, got <%v>", test.expectedError, test.vatNumber, err)
 		}
@@ -31,13 +31,13 @@ func TestViesService(t *testing.T) {
 	}
 }
 
-func TestViesServiceIncludeResponse(t *testing.T) {
-	resp, err := ViesLookupService.Validate("BE0472429986", ValidatorOpts{IncludeResponse: true})
+func TestViesServiceWithResponse(t *testing.T) {
+	resp, err := ValidateExistsWithResponse("BE0472429986")
 	if err != nil {
 		t.Fatalf("expected no error for valid VAT, got %v", err)
 	}
 	if resp == nil || resp.VIESResponse == nil {
-		t.Fatal("expected VIESResponse to be populated when IncludeResponse is true")
+		t.Fatal("expected VIESResponse to be populated")
 	}
 	if resp.VIESResponse.CountryCode != "BE" {
 		t.Errorf("expected CountryCode 'BE', got %q", resp.VIESResponse.CountryCode)

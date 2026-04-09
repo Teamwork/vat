@@ -11,15 +11,25 @@ import (
 
 // LookupServiceInterface is an interface for the service that calls external services to validate VATs.
 type LookupServiceInterface interface {
-	Validate(vatNumber string, opts ValidatorOpts) (*LookupResponse, error)
+	Validate(vatNumber string, opts ValidatorOpts) error
+}
+
+// lookupServiceWithResponse is implemented by services that can return the full response.
+type lookupServiceWithResponse interface {
+	validateWithResponse(vatNumber string, opts ValidatorOpts) (*LookupResponse, error)
 }
 
 // viesService validates EU VAT numbers with the VIES service
 type viesService struct{}
 
 // Validate returns whether the given VAT number is valid or not
-// When opts.IncludeResponse is true, the full VIES response is returned in LookupResponse.VIESResponse.
-func (s *viesService) Validate(vatNumber string, opts ValidatorOpts) (*LookupResponse, error) {
+func (s *viesService) Validate(vatNumber string, opts ValidatorOpts) error {
+	_, err := s.validateWithResponse(vatNumber, opts)
+	return err
+}
+
+// validateWithResponse performs validation and returns the full VIES response.
+func (s *viesService) validateWithResponse(vatNumber string, opts ValidatorOpts) (*LookupResponse, error) {
 	if len(vatNumber) < 3 {
 		return nil, ErrInvalidVATNumberFormat
 	}
@@ -81,10 +91,7 @@ func (s *viesService) Validate(vatNumber string, opts ValidatorOpts) (*LookupRes
 		return nil, ErrVATNumberNotFound
 	}
 
-	if opts.IncludeResponse {
-		return &LookupResponse{VIESResponse: r}, nil
-	}
-	return nil, nil
+	return &LookupResponse{VIESResponse: r}, nil
 }
 
 // getEnvelope parses VIES lookup envelope template

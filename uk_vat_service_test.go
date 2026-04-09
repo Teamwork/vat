@@ -58,23 +58,22 @@ func TestUKVATService(t *testing.T) {
 	opts.UKAccessToken = token
 
 	for _, test := range ukTests {
-		_, err := UKVATLookupService.Validate(test.vatNumber, opts)
+		err := UKVATLookupService.Validate(test.vatNumber, opts)
 		if !errors.Is(err, test.expectedError) {
 			t.Errorf("Expected <%v> for %v, got <%v>", test.expectedError, test.vatNumber, err)
 		}
 	}
 }
 
-func TestUKVATServiceIncludeResponse(t *testing.T) {
+func TestUKVATServiceWithResponse(t *testing.T) {
 	if err := godotenv.Load(); err != nil {
 		t.Fatalf("Error loading .env file: %v", err)
 	}
 
 	opts := ValidatorOpts{
-		UKClientID:      os.Getenv("CLIENT_ID"),
-		UKClientSecret:  os.Getenv("SECRET"),
-		IsUKTest:        true,
-		IncludeResponse: true,
+		UKClientID:     os.Getenv("CLIENT_ID"),
+		UKClientSecret: os.Getenv("SECRET"),
+		IsUKTest:       true,
 	}
 
 	if opts.UKClientID == "" || opts.UKClientSecret == "" {
@@ -87,12 +86,12 @@ func TestUKVATServiceIncludeResponse(t *testing.T) {
 	}
 	opts.UKAccessToken = token
 
-	resp, err := UKVATLookupService.Validate("GB553557881", opts)
+	resp, err := ValidateExistsWithResponse("GB553557881", opts)
 	if err != nil {
 		t.Fatalf("expected no error for valid VAT, got %v", err)
 	}
 	if resp == nil || resp.UKVATResponse == nil {
-		t.Fatal("expected UKVATResponse to be populated when IncludeResponse is true")
+		t.Fatal("expected UKVATResponse to be populated")
 	}
 	if resp.UKVATResponse.Target.VATNumber != "553557881" {
 		t.Errorf("expected Target.VATNumber '553557881', got %q", resp.UKVATResponse.Target.VATNumber)
