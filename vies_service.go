@@ -29,7 +29,7 @@ func (s *viesService) Validate(vatNumber string, opts ValidatorOpts) error {
 }
 
 // validateWithResponse performs validation and returns the full VIES response.
-func (s *viesService) validateWithResponse(vatNumber string, opts ValidatorOpts) (*LookupResponse, error) {
+func (s *viesService) validateWithResponse(vatNumber string, _ ValidatorOpts) (*LookupResponse, error) {
 	if len(vatNumber) < 3 {
 		return nil, ErrInvalidVATNumberFormat
 	}
