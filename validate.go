@@ -18,6 +18,16 @@ func Validate(vatNumber string, opts ...ValidatorOpts) error {
 	return ValidateExists(vatNumber, opts...)
 }
 
+// ValidateWithResponse validates a VAT number by both format and existence, returning the full
+// service response on success. If no error then the VAT number is valid.
+func ValidateWithResponse(vatNumber string, opts ...ValidatorOpts) (*LookupResponse, error) {
+	err := ValidateFormat(vatNumber)
+	if err != nil {
+		return nil, err
+	}
+	return ValidateExistsWithResponse(vatNumber, opts...)
+}
+
 // ValidateFormat validates a VAT number by its format. If no error is returned then it is valid.
 func ValidateFormat(vatNumber string) error {
 	patterns := map[string]string{
@@ -98,10 +108,42 @@ func ValidateExists(vatNumber string, optsSlice ...ValidatorOpts) error {
 	return lookupService.Validate(vatNumber, opts)
 }
 
+// ValidateExistsWithResponse validates that the given VAT number exists in the external lookup
+// service, returning the full service response on success. If no error then the VAT number is valid.
+func ValidateExistsWithResponse(vatNumber string, optsSlice ...ValidatorOpts) (*LookupResponse, error) {
+	if len(vatNumber) < 3 {
+		return nil, ErrInvalidVATNumberFormat
+	}
+
+	vatNumber = strings.ToUpper(vatNumber)
+
+	lookupService := ViesLookupService
+	if strings.HasPrefix(vatNumber, "GB") {
+		lookupService = UKVATLookupService
+	}
+
+	opts := ValidatorOpts{}
+	if len(optsSlice) > 0 {
+		opts = optsSlice[0]
+	}
+
+	if svc, ok := lookupService.(lookupServiceWithResponse); ok {
+		return svc.validateWithResponse(vatNumber, opts)
+	}
+	return nil, lookupService.Validate(vatNumber, opts)
+}
+
 // ValidatorOpts are options for the VAT number validator.
 type ValidatorOpts struct {
 	UKClientID     string
 	UKClientSecret string
 	UKAccessToken  *UKAccessToken
 	IsUKTest       bool
+}
+
+// LookupResponse contains the response from the VAT lookup service.
+// Exactly one of VIESResponse or UKVATResponse will be populated, depending on the service used.
+type LookupResponse struct {
+	VIESResponse  *VIESResponse  `json:"viesResponse,omitempty"`
+	UKVATResponse *UKVATResponse `json:"ukVATResponse,omitempty"`
 }

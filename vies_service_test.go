@@ -30,3 +30,25 @@ func TestViesService(t *testing.T) {
 		time.Sleep(time.Second * 2) // delay to prevent rate limiting
 	}
 }
+
+func TestViesServiceWithResponse(t *testing.T) {
+	resp, err := ValidateExistsWithResponse("BE0472429986")
+	if err != nil {
+		t.Fatalf("expected no error for valid VAT, got %v", err)
+	}
+	if resp == nil || resp.VIESResponse == nil {
+		t.Fatal("expected VIESResponse to be populated")
+	}
+	if resp.VIESResponse.CountryCode != "BE" {
+		t.Errorf("expected CountryCode 'BE', got %q", resp.VIESResponse.CountryCode)
+	}
+	if resp.VIESResponse.VATNumber != "0472429986" {
+		t.Errorf("expected VATNumber '0472429986', got %q", resp.VIESResponse.VATNumber)
+	}
+	if !resp.VIESResponse.Valid {
+		t.Error("expected Valid to be true")
+	}
+	if resp.VIESResponse.Name == "" {
+		t.Error("expected Name to be populated")
+	}
+}

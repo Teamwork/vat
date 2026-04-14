@@ -211,6 +211,94 @@ func TestValidateExists(t *testing.T) {
 	}
 }
 
+// stubLookupService implements both LookupServiceInterface and lookupServiceWithResponse,
+// returning canned values for testing.
+type stubLookupService struct {
+	response *LookupResponse
+	err      error
+}
+
+func (s *stubLookupService) Validate(_ string, _ ValidatorOpts) error {
+	return s.err
+}
+
+func (s *stubLookupService) validateWithResponse(_ string, _ ValidatorOpts) (*LookupResponse, error) {
+	return s.response, s.err
+}
+
+func TestValidateExistsWithResponse(t *testing.T) {
+	defer restoreLookupServices()
+
+	t.Run("returns VIES response on success", func(t *testing.T) {
+		expected := &LookupResponse{
+			VIESResponse: &VIESResponse{
+				CountryCode: "NL",
+				VATNumber:   "123456789B01",
+				Valid:       true,
+				Name:        "Test Company B.V.",
+				Address:     "123 Test St",
+			},
+		}
+		ViesLookupService = &stubLookupService{response: expected}
+
+		resp, err := ValidateExistsWithResponse("NL123456789B01")
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+		if resp != expected {
+			t.Errorf("expected response %+v, got %+v", expected, resp)
+		}
+	})
+
+	t.Run("returns UK response on success", func(t *testing.T) {
+		expected := &LookupResponse{
+			UKVATResponse: &UKVATResponse{
+				ProcessingDate: "2026-04-08",
+			},
+		}
+		expected.UKVATResponse.Target.Name = "UK Test Ltd"
+		expected.UKVATResponse.Target.VATNumber = "333289454"
+		UKVATLookupService = &stubLookupService{response: expected}
+
+		resp, err := ValidateExistsWithResponse("GB333289454")
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+		if resp != expected {
+			t.Errorf("expected response %+v, got %+v", expected, resp)
+		}
+	})
+
+	t.Run("returns error and nil response on failure", func(t *testing.T) {
+		ViesLookupService = &stubLookupService{err: ErrVATNumberNotFound}
+
+		resp, err := ValidateExistsWithResponse("NL123456789B01")
+		if err != ErrVATNumberNotFound {
+			t.Errorf("expected ErrVATNumberNotFound, got %v", err)
+		}
+		if resp != nil {
+			t.Errorf("expected nil response, got %+v", resp)
+		}
+	})
+
+	t.Run("falls back to error-only when service lacks response support", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockService := NewMockLookupServiceInterface(ctrl)
+		ViesLookupService = mockService
+		mockService.EXPECT().Validate("NL123456789B01", ValidatorOpts{}).Return(nil)
+
+		resp, err := ValidateExistsWithResponse("NL123456789B01")
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+		if resp != nil {
+			t.Errorf("expected nil response from fallback, got %+v", resp)
+		}
+	})
+}
+
 func restoreLookupServices() {
 	ViesLookupService = &viesService{}
 	UKVATLookupService = &ukVATService{}

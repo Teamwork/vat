@@ -1,8 +1,10 @@
+version: "2"
+
 run:
   tests: true
 
 linters:
-  disable-all: true
+  default: none
   enable:
     - govet
     - revive
@@ -11,14 +13,14 @@ linters:
     - staticcheck
     - ineffassign
     - unconvert
-    - goimports
     - misspell
     - lll
     - nakedret
     - gocritic
+  settings:
+    lll:
+      line-length: 120
 
-linters-settings:
-  lll:
-    line-length: 120
-issues:
-  exclude-use-default: false
+formatters:
+  enable:
+    - goimports

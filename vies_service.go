@@ -14,19 +14,29 @@ type LookupServiceInterface interface {
 	Validate(vatNumber string, opts ValidatorOpts) error
 }
 
+// lookupServiceWithResponse is implemented by services that can return the full response.
+type lookupServiceWithResponse interface {
+	validateWithResponse(vatNumber string, opts ValidatorOpts) (*LookupResponse, error)
+}
+
 // viesService validates EU VAT numbers with the VIES service
 type viesService struct{}
 
 // Validate returns whether the given VAT number is valid or not
-// There currently are no VIES options, so the "opts" parameter is here for interface compliance but ignored
-func (s *viesService) Validate(vatNumber string, _ ValidatorOpts) error {
+func (s *viesService) Validate(vatNumber string, opts ValidatorOpts) error {
+	_, err := s.validateWithResponse(vatNumber, opts)
+	return err
+}
+
+// validateWithResponse performs validation and returns the full VIES response.
+func (s *viesService) validateWithResponse(vatNumber string, _ ValidatorOpts) (*LookupResponse, error) {
 	if len(vatNumber) < 3 {
-		return ErrInvalidVATNumberFormat
+		return nil, ErrInvalidVATNumberFormat
 	}
 
 	res, err := s.lookup(s.getEnvelope(vatNumber))
 	if err != nil {
-		return ErrServiceUnavailable{Err: err}
+		return nil, ErrServiceUnavailable{Err: err}
 	}
 	defer func() {
 		_ = res.Body.Close()
@@ -34,19 +44,19 @@ func (s *viesService) Validate(vatNumber string, _ ValidatorOpts) error {
 
 	xmlRes, err := io.ReadAll(res.Body)
 	if err != nil {
-		return ErrServiceUnavailable{Err: err} // assume if we can't read the body then VIES gave us a bad response
+		return nil, ErrServiceUnavailable{Err: err} // assume if we can't read the body then VIES gave us a bad response
 	}
 
 	// check if response contains "INVALID_INPUT" string
 	if bytes.Contains(xmlRes, []byte("INVALID_INPUT")) {
-		return ErrInvalidVATNumberFormat
+		return nil, ErrInvalidVATNumberFormat
 	}
 
 	// check if response contains "MS_UNAVAILABLE" string
 	if bytes.Contains(xmlRes, []byte("MS_UNAVAILABLE")) {
-		return ErrServiceUnavailable{Err: errors.New("vies reports service is unavailable")}
+		return nil, ErrServiceUnavailable{Err: errors.New("vies reports service is unavailable")}
 	} else if bytes.Contains(xmlRes, []byte("MS_MAX_CONCURRENT_REQ")) {
-		return ErrServiceUnavailable{Err: errors.New("max concurrent requests limit hit")}
+		return nil, ErrServiceUnavailable{Err: errors.New("max concurrent requests limit hit")}
 	}
 
 	var rd struct {
@@ -65,10 +75,10 @@ func (s *viesService) Validate(vatNumber string, _ ValidatorOpts) error {
 		}
 	}
 	if err = xml.Unmarshal(xmlRes, &rd); err != nil {
-		return ErrServiceUnavailable{Err: err} // assume if response data doesn't match the struct, the service is down
+		return nil, ErrServiceUnavailable{Err: err} // assume if response data doesn't match the struct, the service is down
 	}
 
-	r := &viesResponse{
+	r := &VIESResponse{
 		CountryCode: rd.Soap.Soap.CountryCode,
 		VATNumber:   rd.Soap.Soap.VATNumber,
 		RequestDate: rd.Soap.Soap.RequestDate,
@@ -78,9 +88,10 @@ func (s *viesService) Validate(vatNumber string, _ ValidatorOpts) error {
 	}
 
 	if !r.Valid {
-		return ErrVATNumberNotFound
+		return nil, ErrVATNumberNotFound
 	}
-	return nil
+
+	return &LookupResponse{VIESResponse: r}, nil
 }
 
 // getEnvelope parses VIES lookup envelope template
@@ -115,12 +126,12 @@ func (s *viesService) lookup(envelope string) (*http.Response, error) {
 
 const viesServiceURL = "https://ec.europa.eu/taxation_customs/vies/services/checkVatService"
 
-// viesResponse holds the response data from the Vies call
-type viesResponse struct {
-	CountryCode string
-	VATNumber   string
-	RequestDate string
-	Valid       bool
-	Name        string
-	Address     string
+// VIESResponse holds the response data from the VIES service.
+type VIESResponse struct {
+	CountryCode string `json:"countryCode"`
+	VATNumber   string `json:"vatNumber"`
+	RequestDate string `json:"requestDate"`
+	Valid       bool   `json:"valid"`
+	Name        string `json:"name"`
+	Address     string `json:"address"`
 }

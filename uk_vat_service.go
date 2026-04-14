@@ -17,12 +17,18 @@ type ukVATService struct{}
 
 // Validate checks if the given VAT number exists and is active. If no error is returned, then it is.
 func (s *ukVATService) Validate(vatNumber string, opts ValidatorOpts) error {
+	_, err := s.validateWithResponse(vatNumber, opts)
+	return err
+}
+
+// validateWithResponse performs validation and returns the full UK VAT API response.
+func (s *ukVATService) validateWithResponse(vatNumber string, opts ValidatorOpts) (*LookupResponse, error) {
 	if opts.UKAccessToken == nil || opts.UKAccessToken.IsExpired() {
 		// if no access token is provided or if it's expired, try to generate one
 		// (it is recommended to generate one separately and cache it and pass it in as an option here)
 		accessToken, err := GenerateUKAccessToken(opts)
 		if err != nil {
-			return ErrMissingUKAccessToken
+			return nil, ErrMissingUKAccessToken
 		}
 		opts.UKAccessToken = accessToken
 	}
@@ -31,7 +37,7 @@ func (s *ukVATService) Validate(vatNumber string, opts ValidatorOpts) error {
 
 	// Only VAT numbers starting with "GB" are supported by this service. All others should go through the VIES service.
 	if !strings.HasPrefix(vatNumber, "GB") {
-		return ErrInvalidCountryCode
+		return nil, ErrInvalidCountryCode
 	}
 
 	apiURL := fmt.Sprintf(
@@ -42,7 +48,7 @@ func (s *ukVATService) Validate(vatNumber string, opts ValidatorOpts) error {
 
 	req, err := http.NewRequest("GET", apiURL, nil)
 	if err != nil {
-		return ErrServiceUnavailable{Err: err}
+		return nil, ErrServiceUnavailable{Err: err}
 	}
 
 	req.Header.Set("Accept", "application/vnd.hmrc.2.0+json")
@@ -54,26 +60,30 @@ func (s *ukVATService) Validate(vatNumber string, opts ValidatorOpts) error {
 
 	response, err := client.Do(req)
 	if err != nil {
-		return ErrServiceUnavailable{Err: err}
+		return nil, ErrServiceUnavailable{Err: err}
 	}
 	defer func(Body io.ReadCloser) {
 		_ = Body.Close()
 	}(response.Body)
 
 	if response.StatusCode == http.StatusBadRequest {
-		return ErrInvalidVATNumberFormat
+		return nil, ErrInvalidVATNumberFormat
 	}
 	if response.StatusCode == http.StatusNotFound {
-		return ErrVATNumberNotFound
+		return nil, ErrVATNumberNotFound
 	}
 	if response.StatusCode != http.StatusOK {
-		return ErrServiceUnavailable{
+		return nil, ErrServiceUnavailable{
 			Err: fmt.Errorf("unexpected status code from UK VAT API: %d", response.StatusCode),
 		}
 	}
 
 	// If we receive a valid 200 response from this API, it means the VAT number exists and is valid
-	return nil
+	var ukResp UKVATResponse
+	if err := json.NewDecoder(response.Body).Decode(&ukResp); err != nil {
+		return nil, ErrServiceUnavailable{Err: err}
+	}
+	return &LookupResponse{UKVATResponse: &ukResp}, nil
 }
 
 // UKAccessToken contains access token information used to authenticate with the UK VAT API.
@@ -154,3 +164,25 @@ func ukVatServiceURL(isTest bool) string {
 // API Documentation:
 // https://developer.service.hmrc.gov.uk/api-documentation/docs/api/service/vat-registered-companies-api/2.0/oas/page
 const ukVATServiceDomain = "api.service.hmrc.gov.uk"
+
+// UKVATResponse holds the response data from the UK VAT API.
+type UKVATResponse struct {
+	Target struct {
+		Name      string       `json:"name"`
+		VATNumber string       `json:"vatNumber"`
+		Address   UKVATAddress `json:"address"`
+	} `json:"target"`
+	Requester          string `json:"requester,omitempty"`
+	ConsultationNumber string `json:"consultationNumber,omitempty"`
+	ProcessingDate     string `json:"processingDate"`
+}
+
+// UKVATAddress holds the address data from the UK VAT API response.
+type UKVATAddress struct {
+	Line1       string `json:"line1"`
+	Line2       string `json:"line2,omitempty"`
+	Line3       string `json:"line3,omitempty"`
+	Line4       string `json:"line4,omitempty"`
+	Postcode    string `json:"postcode"`
+	CountryCode string `json:"countryCode"`
+}
